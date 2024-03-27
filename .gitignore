@@ -2,4 +2,4 @@ data/
 results/
 work/
 .nextflow/
-**.log
+**.log*

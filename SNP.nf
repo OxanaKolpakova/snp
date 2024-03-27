@@ -3,7 +3,6 @@
 params.reference = "/home/alexandr/Documents/SNP/data/MT.fna"
 params.reads = "/home/alexandr/Documents/SNP/data/*R{1,2}.fastq"
 params.outdir = "results"
-params.short = false // If the 'short' parameter is passed, perform alignment without fastp
 
 log.info """\
     ===================================
@@ -14,6 +13,17 @@ log.info """\
     outdir   : ${params.outdir}
     """
     .stripIndent(true)
+
+process BWA_TRY {
+    
+    output:
+    stdout
+
+    script:
+    """
+    which bwa
+    """
+}
     
 /*
  * Define the `BWAINDEX` process that creates an index
@@ -134,6 +144,7 @@ process CRSEQDICT {
 process HAPCALL {
     tag "$reference $bamFile"
     publishDir "${params.outdir}/haplotype_caller"
+    enabled = false
 
     input:
     path reference
@@ -151,18 +162,16 @@ process HAPCALL {
     """
 }
 
-if (params.reads != false) {
-            Channel.fromFilePairs(params.reads, checkIfExists: true )
-                .set { input_fastqs }
-        }
+input_fastqs = params.reads ? Channel.fromFilePairs(params.reads, checkIfExists: true) : null
 
 workflow {
-        BWAINDEX(params.reference)
-        FASTP(input_fastqs)
-        BWAMEM(FASTP.out[0], params.reference, BWAINDEX.out)
-        GENIDX(params.reference)
-        CRSEQDICT(params.reference)
-        HAPCALL(params.reference, BWAMEM.out)
+//        BWAINDEX(params.reference)
+//        FASTP(input_fastqs)
+//      BWAMEM(FASTP.out[0], params.reference, BWAINDEX.out)
+//        GENIDX(params.reference)
+//        CRSEQDICT(params.reference)
+//        HAPCALL(params.reference, BWAMEM.out)
+        BWA_TRY().view()
 }
 
 workflow.onComplete {

@@ -14,16 +14,6 @@ log.info """\
     """
     .stripIndent(true)
 
-process BWA_TRY {
-    
-    output:
-    stdout
-
-    script:
-    """
-    which bwa
-    """
-}
     
 /*
  * Define the `BWAINDEX` process that creates an index
@@ -58,7 +48,6 @@ process FASTP{
 
     output:
     tuple val(sid), path(fq_1_trimmed), path(fq_2_trimmed), emit: trimmed_reads
-            file("${sid}.fastp_stats.json")
             file("${sid}.fastp_stats.html")
 
     script:
@@ -122,8 +111,7 @@ process GENIDX {
  */
 process CRSEQDICT {
     tag "$reference"
-    publishDir "${params.outdir}/crseqdict"
-    debug true
+    publishDir "${params.outdir}/seqdict"
 
     input:
     path reference
@@ -133,7 +121,7 @@ process CRSEQDICT {
 
     script:
     """
-    java -jar /home/alexandr/picard.jar CreateSequenceDictionary R=${reference} O=${reference.baseName}.dict
+    java -jar /usr/local/bin/mm/share/picard-2.27.2-0/picard.jar CreateSequenceDictionary R=${reference} O=${reference.baseName}.dict
     """
 }
 
@@ -144,11 +132,13 @@ process CRSEQDICT {
 process HAPCALL {
     tag "$reference $bamFile"
     publishDir "${params.outdir}/haplotype_caller"
-    enabled = false
-
+	debug true
+	
     input:
     path reference
     path bamFile
+    path idx
+    path dict
 
     output:
     file '*.vcf'
@@ -165,13 +155,12 @@ process HAPCALL {
 input_fastqs = params.reads ? Channel.fromFilePairs(params.reads, checkIfExists: true) : null
 
 workflow {
-//        BWAINDEX(params.reference)
-//        FASTP(input_fastqs)
-//      BWAMEM(FASTP.out[0], params.reference, BWAINDEX.out)
-//        GENIDX(params.reference)
-//        CRSEQDICT(params.reference)
-//        HAPCALL(params.reference, BWAMEM.out)
-        BWA_TRY().view()
+        BWAINDEX(params.reference)
+        FASTP(input_fastqs)
+        BWAMEM(FASTP.out[0], params.reference, BWAINDEX.out)
+        GENIDX(params.reference)
+        CRSEQDICT(params.reference)
+        HAPCALL(params.reference, BWAMEM.out, GENIDX.out, CRSEQDICT.out)
 }
 
 workflow.onComplete {

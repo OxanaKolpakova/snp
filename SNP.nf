@@ -16,10 +16,10 @@ log.info """\
 
     
 /*
- * Define the `BWAINDEX` process that creates an index
+ * Define the `REFINDEX` process that creates an index
  * given the reference genome file
  */
-process BWAINDEX {
+process REFINDEX {
     tag "$reference"
     publishDir "${params.outdir}/bwaindex"
     input:
@@ -35,13 +35,13 @@ process BWAINDEX {
 }
 
 /*
- * Define the `FASTP` process that performs quality trimming and filtering of reads
+ * Define the `QCONTROL` process that performs quality trimming and filtering of reads
  */
-process FASTP{
+process QCONTROL{
     tag "${sid}"
     cpus params.cpus
     memory params.memory
-    publishDir "${params.outdir}/fastp", mode: 'copy'
+    publishDir "${params.outdir}/fastp"
 
     input:
     tuple val(sid), path(reads)
@@ -65,13 +65,13 @@ process FASTP{
 }
 
 /*
- * Define the `BWAMEM` process that aligns reads to the reference genome
+ * Define the `ALIGN` process that aligns reads to the reference genome
  */
-process BWAMEM {
+process ALIGN {
     tag "$reference ${sid}"
     cpus params.cpus
     memory params.memory
-    publishDir "${params.outdir}/bwamem", mode: 'copy'
+    publishDir "${params.outdir}/bwamem"
     
     input:
     tuple val(sid), path(reads1), path(reads2)
@@ -93,6 +93,7 @@ process BWAMEM {
 process GENIDX {
     tag "$reference"
     publishDir "${params.outdir}/genidx"
+    
     input:
     path reference
 
@@ -126,7 +127,7 @@ process CRSEQDICT {
 }
 
 /*
- * Define the `HaplotypeCaller` process that performs variant calling
+ * Define the `HAPCALL` process that performs variant calling
  * using GATK HaplotypeCaller
  */
 process HAPCALL {
@@ -152,15 +153,54 @@ process HAPCALL {
     """
 }
 
+process PREPARE {
+    tag "$bamFile"
+    publishDir "${params.outdir}/mpileup"
+	debug true
+	
+    input:
+    path bamFile
+
+    output:
+    file '*.sorted.bam'
+
+    script:
+    """
+	samtools sort $bamFile -o ${bamFile.baseName}.sorted.bam
+	samtools index ${bamFile.baseName}.sorted.bam
+    """
+}
+
+process CALLSNP {
+    tag "$reference $bamFile"
+    publishDir "${params.outdir}/bcftools"
+	debug true
+	
+    input:
+    path reference
+    path bamFile
+
+    output:
+    file '*.vcf'
+
+    script:
+    """
+    bcftools mpileup -Ou -f $reference $bamFile | bcftools call -mv > ${bamFile.baseName}.vcf
+    """
+}
+
+
 input_fastqs = params.reads ? Channel.fromFilePairs(params.reads, checkIfExists: true) : null
 
 workflow {
-        BWAINDEX(params.reference)
-        FASTP(input_fastqs)
-        BWAMEM(FASTP.out[0], params.reference, BWAINDEX.out)
-        GENIDX(params.reference)
-        CRSEQDICT(params.reference)
-        HAPCALL(params.reference, BWAMEM.out, GENIDX.out, CRSEQDICT.out)
+        REFINDEX(params.reference)
+        QCONTROL(input_fastqs)
+        ALIGN(QCONTROL.out[0], params.reference, REFINDEX.out)
+//        GENIDX(params.reference)
+//        CRSEQDICT(params.reference)
+//        HAPCALL(params.reference, ALIGN.out, GENIDX.out, CRSEQDICT.out)
+        PREPARE(ALIGN.out)
+        CALLSNP(params.reference, PREPARE.out)
 }
 
 workflow.onComplete {

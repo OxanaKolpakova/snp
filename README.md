@@ -1,31 +1,43 @@
-# SNP
-Try to make nextflow for variant calling
+# SNP Pipeline
+
+SNP Pipeline is a Nextflow-based pipeline for Single Nucleotide Polymorphism (SNP) calling from genome sequencing data. This pipeline provides streamlined processing from sequencing to annotation, assisting researchers in analyzing genetic variations with minimal effort.
+
+## Features
+
+- Alignment using BWA mem for accurate mapping of sequences to the reference genome.
+- Quality control using fastp to remove adapters and low-quality reads.
+- Variant calling using mpileup for SNP and indel detection.
+- Variant annotation using Variant Effect Predictor (VEP) to identify functional consequences of variations.
+- Support for containerization using Singularity, ensuring ease of deployment and management of the execution environment.
+
+## Requirements
+
+- Installed Nextflow (https://www.nextflow.io/docs/latest/getstarted.html)
+- Installed Singularity (https://docs.sylabs.io/guides/3.0/user-guide/installation.html)
+- Resources for analysis: computational power, access to sequencing data.
+- Singularity for containerization. Make sure Singularity is installed and accessible in your environment.
+
+## Installation and Execution
+
+1. Install Nextflow by following the instructions on the official website. (https://www.nextflow.io/docs/latest/getstarted.html)
+
+2. Clone the SNP Pipeline repository to your local machine.
+```
+git clone https://github.com/glebus-sasha/SNP.git
+```
+3. Navigate to the directory containing the pipeline and execute it using the command `nextflow run SNP.nf`.
+
+## Usage Example
+
+Example command to run the pipeline:
 
 ```
-java -jar picard.jar CreateSequenceDictionary R=/home/alexandr/Documents/SNP/data/MT_short.fna O=/home/alexandr/Documents/SNP/data/MT_short.dict
-
-    gatk HaplotypeCaller \
-         -R /home/alexandr/Documents/SNP/data/MT_short.fna \
-         -I /home/alexandr/Documents/SNP/results/bwamem/sample.bam \
-         -O /home/alexandr/Documents/SNP/results/sample.vcf
+nextflow run SNP.nf
 ```
 
-```
-mkdir -p $GOPATH/src/github.com/sylabs && \
-    cd $GOPATH/src/github.com/sylabs && \
-    wget https://github.com/sylabs/singularity/releases/download/v4.1.2/singularity-ce-4.1.2.tar.gz && \
-    tar -xzf singularity-${VERSION}.tar.gz && \
-    cd ./singularity && \
-    ./mconfig
-```
+## Contributors
 
-```
-singularity exec library://funsinaime/gatk/withlc2 gatk HaplotypeCaller \
-    -R /path/to/your/reference.fasta \
-    -I /path/to/your/input.bam \
-    -O output.vcf
-```
 
-samtools sort SRR14298060.bam -o SRR14298060.sorted.bam
-samtools index ${bamFile.baseName}.sorted.bam
-samtools mpileup -uf $reference ${bamFile.baseName}.sorted.bam > ${bamFile.baseName}.pileup
+## License
+
+SNP Pipeline is distributed under the MIT license. See the LICENSE file for details.

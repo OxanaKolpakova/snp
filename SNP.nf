@@ -1,12 +1,30 @@
 #!/usr/bin/env nextflow
 
-params.reference = "/home/alexandr/Documents/SNP/data/MT.fna"
-params.reads = "/home/alexandr/Documents/SNP/data/*R{1,2}.fastq"
-params.outdir = "results"
+params.reference    = "/home/alexandr/Documents/SNP/data/MT.fna"
+params.reads        = "/home/alexandr/Documents/SNP/data/*R{1,2}.fastq"
+params.outdir       = "results"
+params.help = false
+
+// in your_script.nf
+if ( params.help ) {
+    help = """SNP.nf: A description of your script and maybe some examples of how
+             |                to run the script
+             |Required arguments:
+             |  --input_file  Location of the input file file.
+             |                [default: ${params.reads}]
+             |
+             |Optional arguments:
+             |  --use_thing   Do some optional process.
+             |  -w            The NextFlow work directory. Delete the directory once the process
+             |                is finished [default: ${workDir}]""".stripMargin()
+    // Print the help with the stripped margin and exit
+    println(help)
+    exit(0)
+}
 
 log.info """\
     ===================================
-    S N P   P I P E L I N E
+     S N P   P I P E L I N E
     ===================================
     reference: ${params.reference}
     reads    : ${params.reads}
@@ -21,7 +39,6 @@ log.info """\
  */
 process REFINDEX {
     tag "$reference"
-    publishDir "${params.outdir}/bwaindex"
     input:
     path reference
 
@@ -40,7 +57,6 @@ process REFINDEX {
 process QCONTROL{
     tag "${sid}"
     cpus params.cpus
-    memory params.memory
     publishDir "${params.outdir}/fastp"
 
     input:
@@ -70,9 +86,8 @@ process QCONTROL{
 process ALIGN {
     tag "$reference ${sid}"
     cpus params.cpus
-    memory params.memory
-    publishDir "${params.outdir}/bwamem"
-    
+    publishDir "${params.outdir}/ALIGN"
+
     input:
     tuple val(sid), path(reads1), path(reads2)
     path reference
@@ -112,17 +127,27 @@ process GENIDX {
  */
 process CRSEQDICT {
     tag "$reference"
-    publishDir "${params.outdir}/seqdict"
+    publishDir "${params.outdir}/picard"
 
     input:
     path reference
+    path bamFile
 
     output:
-    path "*"
+    path "*.dict"
+    path "*.bam"
 
     script:
     """
     java -jar /usr/local/bin/mm/share/picard-2.27.2-0/picard.jar CreateSequenceDictionary R=${reference} O=${reference.baseName}.dict
+    java -jar /usr/local/bin/mm/share/picard-2.27.2-0/picard.jar AddOrReplaceReadGroups \
+      I=$bamFile \
+      O=${bamFile.baseName}.bam \
+      --RGID 4 \
+      --RGLB lib1 \
+      --RGPL illumina \
+      --RGPU unit1 \
+      --RGSM 20
     """
 }
 
@@ -134,6 +159,7 @@ process HAPCALL {
     tag "$reference $bamFile"
     publishDir "${params.outdir}/haplotype_caller"
 	debug true
+//    errorStrategy 'ignore'
 	
     input:
     path reference
@@ -155,8 +181,6 @@ process HAPCALL {
 
 process PREPARE {
     tag "$bamFile"
-    publishDir "${params.outdir}/mpileup"
-	debug true
 	
     input:
     path bamFile
@@ -174,7 +198,6 @@ process PREPARE {
 process CALLSNP {
     tag "$reference $bamFile"
     publishDir "${params.outdir}/bcftools"
-	debug true
 	
     input:
     path reference
@@ -189,6 +212,22 @@ process CALLSNP {
     """
 }
 
+process ANNOTATE {
+    tag "$vcf"
+    publishDir "${params.outdir}/vep"
+	debug true
+	
+    input:
+    path vcf
+
+    output:
+    file '*.vep.vcf'
+
+    script:
+    """
+    vep --database -i $vcf -o ${vcf.baseName}.vep.vcf 
+    """
+}
 
 input_fastqs = params.reads ? Channel.fromFilePairs(params.reads, checkIfExists: true) : null
 
@@ -197,14 +236,28 @@ workflow {
         QCONTROL(input_fastqs)
         ALIGN(QCONTROL.out[0], params.reference, REFINDEX.out)
 //        GENIDX(params.reference)
-//        CRSEQDICT(params.reference)
-//        HAPCALL(params.reference, ALIGN.out, GENIDX.out, CRSEQDICT.out)
         PREPARE(ALIGN.out)
+//        CRSEQDICT(params.reference, PREPARE.out)
+//       HAPCALL(params.reference, CRSEQDICT.out[1], GENIDX.out, CRSEQDICT.out[0])
         CALLSNP(params.reference, PREPARE.out)
+        ANNOTATE(CALLSNP.out)
 }
 
 workflow.onComplete {
+    log.info """\
+        Pipeline execution summary
+        ---------------------------
+        Completed at: ${workflow.complete}
+        Duration    : ${workflow.duration}
+        Success     : ${workflow.success}
+        workDir     : ${workflow.workDir}
+        exit status : ${workflow.exitStatus}
+        """
+        .stripIndent()
+        
     log.info ( workflow.success ? "\nDone" : "\nOops" )
 }
+
+
 
 

@@ -12,66 +12,6 @@ SNP Pipeline is a Nextflow-based pipeline for Single Nucleotide Polymorphism (SN
 
 ## DAG (Directed Acyclic Graph)
 
-```html
-
-<!--
-  ~ Copyright 2013-2023, Seqera Labs
-  ~
-  ~ Licensed under the Apache License, Version 2.0 (the "License");
-  ~ you may not use this file except in compliance with the License.
-  ~ You may obtain a copy of the License at
-  ~
-  ~     http://www.apache.org/licenses/LICENSE-2.0
-  ~
-  ~ Unless required by applicable law or agreed to in writing, software
-  ~ distributed under the License is distributed on an "AS IS" BASIS,
-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  ~ See the License for the specific language governing permissions and
-  ~ limitations under the License.
-  -->
-<html>
-<head>
-<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1">
-</head>
-<body>
-<pre class="mermaid" style="text-align: center;">
-flowchart TB
-    subgraph " "
-    v0["Channel.fromFilePairs"]
-    v1["reference"]
-    v5["reference"]
-    v8["reference"]
-    end
-    v2([REFINDEX])
-    v3([QCONTROL])
-    subgraph " "
-    v4[" "]
-    v11[" "]
-    end
-    v6([ALIGN])
-    v7([PREPARE])
-    v9([CALLSNP])
-    v10([ANNOTATE])
-    v0 --> v3
-    v1 --> v2
-    v2 --> v6
-    v3 --> v6
-    v3 --> v4
-    v5 --> v6
-    v6 --> v7
-    v7 --> v9
-    v8 --> v9
-    v9 --> v10
-    v10 --> v11
-
-</pre>
-<script type="module">
-  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-  mermaid.initialize({ startOnLoad: true });
-</script>
-</body>
-</html>
-```
 
 ## Requirements
 
@@ -90,7 +30,8 @@ git clone https://github.com/glebus-sasha/SNP.git
 ```
 3. Navigate to the directory containing the pipeline and execute it using the command `nextflow run SNP.nf`.
 
-## Usage Example
+## Usage ![DAG](Examplefile:///home/alexandr/%D0%98%D0%B7%D0%BE%D0%B1%D1%80%D0%B0%D0%B6%D0%B5%D0%BD%D0%B8%D1%8F/%D0%A1%D0%BD%D0%B8%D0%BC%D0%BA%D0%B8%20%D1%8D%D0%BA%D1%80%D0%B0%D0%BD%D0%B0/%D0%A1%D0%BD%D0%B8%D0%BC%D0%BE%D0%BA%20%D1%8D%D0%BA%D1%80%D0%B0%D0%BD%D0%B0%20%D0%BE%D1%82%202024-04-02%2011-25-22.png)
+
 
 Example command to run the pipeline:
 

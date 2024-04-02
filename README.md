@@ -12,7 +12,7 @@ SNP Pipeline is a Nextflow-based pipeline for Single Nucleotide Polymorphism (SN
 
 ## DAG (Directed Acyclic Graph)
 
-[![DAG]([https://github.com/glebus-sasha/SNP/image/DAG.png](https://github.com/glebus-sasha/SNP/blob/main/image/DAG.png?raw=true))](https://github.com/glebus-sasha/SNP/blob/main/image/DAG.png?raw=true)
+![image](https://github.com/glebus-sasha/SNP/assets/28355746/1cfe6c23-228c-4191-92b8-3b8d20e11105)
 
 ## Requirements
 

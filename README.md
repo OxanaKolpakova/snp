@@ -42,8 +42,8 @@ nextflow run SNP.nf
 
 ## Contributors
 
-- Glebus Aleksandr ([@glebus-sasha](https://github.com/glebus-sasha/))
 - Oxana Kolpakova ([@OxanaKolpakova](https://github.com/OxanaKolpakova))
+- Glebus Aleksandr ([@glebus-sasha](https://github.com/glebus-sasha/))
 
 ## License
 
